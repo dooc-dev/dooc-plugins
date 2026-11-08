@@ -1,0 +1,13 @@
+title: dooc plugin playground
+defaultLang: jpn
+files:
+  documents:
+    overview: overview.md
+    linear: linear.md
+    github: github.md
+    slack: slack.md
+docs:
+  - overview:
+      - linear
+      - github
+      - slack

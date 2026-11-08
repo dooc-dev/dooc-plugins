@@ -1,0 +1,3 @@
+[tasks.dev]
+description = "Run dooc locally with the Linear, GitHub and Slack demo plugins"
+run = "npm run dev"
