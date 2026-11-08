@@ -1,6 +1,8 @@
 # Linear / GitHub / Slack viewer plugins
 
-URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。dooc 0.0.22以上とSDK 0.0.3を使用します。
+URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。dooc 0.0.22以上と `@sasaki-s-sci/dooc-plugin` 0.0.3を使用します。
+
+3サービスの `read` はSDKの `PluginBlockContent` に従う `format: "blocks"` を返します。`src/cards.ts` で見出し・プロパティ・表・メッセージを組み立て、`header` にサービス情報、`collapsed` に折りたたみ表示を指定します。編集箇所の `edit.action` と操作ブロックの `ids` は、各プラグインの `actions` / `act` APIに結びつけます。
 
 ## localhost で試す
 
@@ -188,11 +190,11 @@ export default {
 npm test
 # With npm run dev running: verify reloads and recovery from a temporary type error.
 node dist/test/hotreload.js
-# Optional integration check against an adjacent dooc checkout with dependencies installed.
-DOOC_ROOT=../dooc node --import ../dooc/node_modules/tsx/dist/loader.mjs dist/test/host.js
+# Integration check against the installed dooc release.
+node dist/test/host.js
 ```
 
-通常のテストは API fixture を使い、認証情報やネットワークを必要としません。結合確認では dooc 本体の OAuth・refresh・認証付き request・view 検証まで通します。実アカウントでの OAuth 承認・API 通信は別途必要です。
+通常のテストは API fixture を使い、認証情報やネットワークを必要としません。描画前に公開版doocのview検証を通し、ブロックの形式・サイズ・リンクを検証します。結合確認もインストール済みのdoocを使い、OAuth・refresh・認証付き request まで通します。隣接するdoocのソースは不要です。実アカウントでの OAuth 承認・API 通信は別途必要です。
 
 ## UIの設計
 

@@ -1,16 +1,12 @@
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { createGitHubPlugin, createLinearPlugin, createSlackPlugin } from "../src/index.js";
 import { githubContext, linearContext, slackContext, options } from "./fixtures.js";
 
-const root = process.env.DOOC_ROOT;
-assert(root, "Set DOOC_ROOT to a dooc source checkout and run with its tsx loader");
-const host = (path: string) => import(pathToFileURL(resolve(root, path)).href);
-const { createPluginRuntime } = await host("src/plugins/runtime.ts");
-const { validateViewerPlugins } = await host("src/viewer/plugin-config.ts");
-const { pluginViewHtml } = await host("src/viewer/plugin-view.ts");
+const host = (path: string) => import(new URL(path, import.meta.resolve("@sasaki-s-sci/dooc")).href);
+const { createPluginRuntime } = await host("plugins/runtime.js");
+const { validateViewerPlugins } = await host("viewer/plugin-config.js");
+const { pluginViewHtml } = await host("viewer/plugin-view.js");
 const previews = [];
 for (const [factory, makeContext, url] of [
   [createLinearPlugin, linearContext, "https://linear.app/acme/issue/DOC-42"],
