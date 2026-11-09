@@ -1,6 +1,6 @@
 {
   "name": "@sasaki-s-sci/dooc-plugins",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "URL-based Linear, GitHub and Slack viewers for dooc.",
   "type": "module",
   "main": "./dist/src/index.js",
@@ -28,8 +28,7 @@
     "dist/src",
     "assets",
     "docs",
-    "examples",
-    ".env.example"
+    "examples"
   ],
   "engines": {
     "node": ">=22"
@@ -38,8 +37,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "npm run build && node dist/dev/server.js",
     "test": "npm run build && node --test dist/test/*.test.js",
-    "test:packages": "npm run pack:plugins && node dist/test/packages.js",
-    "check": "npm test && npm run test:packages",
+    "test:packages": "npm run build && node dist/test/packages.js",
+    "check": "npm test && npm run test:packages && node dist/test/host.js",
     "pack:plugins": "npm run build && node scripts/pack.mjs",
     "prepack": "npm run build"
   },
@@ -48,7 +47,7 @@
     "yaml": "2.9.1"
   },
   "devDependencies": {
-    "@dooc-dev/dooc": "0.0.2",
+    "@dooc-dev/dooc": "0.0.4",
     "@types/node": "22.20.5",
     "esbuild": "0.28.1",
     "typescript": "5.9.3"

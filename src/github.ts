@@ -311,6 +311,7 @@ export function createGitHubPlugin(options: OAuthOptions): ActionPlugin {
     oauth: {
       authorizationUrl: "https://github.com/login/oauth/authorize", tokenUrl: "https://github.com/login/oauth/access_token",
       ...options, scopes: ["repo", "read:user", "read:discussion", "project"],
+      deviceAuthorizationUrl: options.clientSecret ? undefined : "https://github.com/login/device/code",
     },
     async identifyUser(context) {
       const user = object(await context.request(`${API}/user`));

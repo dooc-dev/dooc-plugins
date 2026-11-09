@@ -24,7 +24,7 @@ async function restart(): Promise<void> {
         const exited = once(server, "exit"); server.kill(); await exited;
       }
       if (stopping || !valid || pending) continue;
-      server = spawn(process.execPath, [cli, "view", "./dev/content", port, "--viewer-plugins", "./dist/dev/viewer.js"], {
+      server = spawn(process.execPath, [cli, "view", "./dev/content/dooc.yaml", port, "--viewer-plugins", "./dist/dev/viewer.js"], {
         stdio: ["inherit", "pipe", "inherit"], env: { ...process.env, DOCS_HMR: "1" },
       });
       server.on("error", console.error);

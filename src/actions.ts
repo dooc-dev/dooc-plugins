@@ -10,6 +10,8 @@ export type ActionRequest = PluginActionRequest;
 export type ActionResult = PluginActionResult;
 export interface BoundAction extends UrlAction { run(values: Record<string, string>): Promise<ActionResult> }
 export interface ActionPlugin extends DataPlugin {
+  // shortcut: SDK 0.0.2 lacks the host's device field; remove this extension when the SDK exports it.
+  oauth: DataPlugin["oauth"] & { deviceAuthorizationUrl?: string };
   read(url: URL, context: PluginContext & { user: PluginUser }): Promise<CardView>;
   actions(url: URL, context: PluginContext & { user: PluginUser }): Promise<UrlAction[]>;
   act(url: URL, context: ActionContext, request: ActionRequest): Promise<ActionResult>;

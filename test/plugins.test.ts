@@ -242,25 +242,28 @@ test("Views escape provider HTML, reject dangerous links, and stay under the SDK
   assert(Buffer.byteLength(JSON.stringify(result)) < 2 * 1024 * 1024);
 });
 
-test("Viewer entrypoint loads only configured plugins and rejects incomplete configuration", async () => {
-  const keys = Object.keys(process.env).filter(key => /^DOOC_(LINEAR|SLACK|GITHUB)_CLIENT_/.test(key));
-  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+test("Viewer uses publisher client IDs without reading user environment settings", async () => {
+  const { clientIds, oauthOptions, validateClientIds } = await import("../src/config.js");
+  const saved = { ...clientIds };
+  const key = "DOOC_GITHUB_CLIENT_ID", previous = process.env[key];
   try {
-    for (const key of keys) delete process.env[key];
-    await assert.rejects(import(new URL("../src/viewer.js?none", import.meta.url).href), /Configure at least one/);
-    process.env.DOOC_GITHUB_CLIENT_ID = "client";
-    await assert.rejects(import(new URL("../src/viewer.js?incomplete", import.meta.url).href), /Set both/);
-    process.env.DOOC_GITHUB_CLIENT_SECRET = "secret";
+    for (const name of ["LINEAR", "GITHUB", "SLACK"] as const) delete clientIds[name];
+    process.env[key] = "must-not-use-this-user-setting";
+    await assert.rejects(import(new URL("../src/viewer.js?none", import.meta.url).href), /No OAuth applications/);
+    assert.throws(() => oauthOptions("SLACK"), /publisher/);
+    clientIds.GITHUB = "publisher-github-app";
     const { default: viewer } = await import(new URL("../src/viewer.js?github", import.meta.url).href);
     assert.deepEqual(viewer.plugins.map((plugin: { id: string }) => plugin.id), ["github"]);
-    delete process.env.DOOC_GITHUB_CLIENT_ID; delete process.env.DOOC_GITHUB_CLIENT_SECRET;
-    process.env.DOOC_SLACK_CLIENT_ID = "slack-client";
-    const slackViewer = (await import(new URL("../src/viewer.js?slack", import.meta.url).href)).default;
-    assert.deepEqual(slackViewer.plugins.map((plugin: { id: string }) => plugin.id), ["slack"]);
-    assert.equal(slackViewer.plugins[0].oauth.clientSecret, undefined);
+    assert.equal(viewer.plugins[0].oauth.clientId, "publisher-github-app");
+    assert.equal(viewer.plugins[0].oauth.clientSecret, undefined);
+    assert("deviceAuthorizationUrl" in viewer.plugins[0].oauth);
+    assert.equal(viewer.plugins[0].oauth.deviceAuthorizationUrl, "https://github.com/login/device/code");
+    assert.deepEqual(validateClientIds({ SLACK: "123.456", LINEAR: "linear-client", GITHUB: "Iv1.client" }), { SLACK: "123.456", LINEAR: "linear-client", GITHUB: "Iv1.client" });
+    for (const invalid of [null, [], { SLACK: "" }, { SLACK: " client " }, { GITHUB_CLIENT_SECRET: "secret" }, { SLACK: { clientId: "id", clientSecret: "secret" } }])
+      assert.throws(() => validateClientIds(invalid));
   } finally {
-    delete process.env.DOOC_GITHUB_CLIENT_ID; delete process.env.DOOC_GITHUB_CLIENT_SECRET;
-    delete process.env.DOOC_SLACK_CLIENT_ID;
-    Object.assign(process.env, previous);
+    for (const name of ["LINEAR", "GITHUB", "SLACK"] as const) delete clientIds[name];
+    Object.assign(clientIds, saved);
+    if (previous === undefined) delete process.env[key]; else process.env[key] = previous;
   }
 });

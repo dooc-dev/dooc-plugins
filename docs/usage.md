@@ -1,25 +1,27 @@
 # Linear / GitHub / Slack viewer plugins
 
-URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。`@dooc-dev/dooc` 0.0.2と `@dooc-dev/dooc-plugin` 0.0.2を使用します。本体0.0.1には対応しません。
+URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。`@dooc-dev/dooc` 0.0.4とSDK `@dooc-dev/dooc-plugin` 0.0.2を使用します。GitHubへの接続は本体0.0.4で追加されたDevice Flowを利用します。
 
 3サービスの `read` はSDKの `PluginBlockContent` に従う `{ header, blocks, collapsed }` を返します。SDK 0.0.2で廃止された `format` は通常表示・折りたたみ表示の両方から削除しています。`src/cards.ts` で見出し・プロパティ・表・メッセージを組み立て、`header` にサービス情報、`collapsed` に折りたたみ表示を指定します。編集箇所の `edit.action` と操作ブロックの `ids` は、各プラグインの `actions` / `act` APIに結びつけます。プラグイン管理画面にはサービス名と公式アイコンを表示します。
 
 ## サービス別ZIPをインストール
 
-[GitHub Release v0.0.3](https://github.com/dooc-dev/dooc-plugins/releases/tag/v0.0.3) から `dooc-linear-0.0.3.zip`、`dooc-github-0.0.3.zip`、`dooc-slack-0.0.3.zip` を取得できます。各ZIPには1サービスの実装・依存ライブラリ・公式SVGを同梱しています。
+[GitHub Release v0.0.4](https://github.com/dooc-dev/dooc-plugins/releases/tag/v0.0.4) から各サービスのZIPと `SHA256SUMS` を取得できます。各ZIPには1サービスの実装・依存ライブラリ・公式SVGを同梱しています。
 
-Node.js 22以上とdooc 0.0.2を用意し、下記のOAuth設定を環境変数に設定してからdoocを起動します。ZIPはdoocのプラグイン管理画面にドロップするか、CLIで追加します。
+配布者が公開Client IDを組み込んだZIPをdoocのプラグイン管理画面に追加し、各サービスの接続ボタンを押します。利用者が `DOOC_SLACK_CLIENT_ID` などの環境変数を設定する必要はありません。Linear・Slackはブラウザで承認し、GitHubは表示された確認コードをGitHubの認証画面に入力します。組織がSSOを利用している場合は、そのサービス側のログイン設定に従います。
+
+v0.0.4はLinearの公開Client IDを設定済みです。GitHubとSlackには明示的なダミーID（`unconfigured-github-client-id`、`unconfigured-slack-client-id`）を同梱しています。この2つのZIPはインストールできますが、実サービスへのOAuth接続はできません。配布者が `src/oauth-clients.json` のダミー値を登録済みClient IDへ置き換え、再配布する必要があります。Linearを含め、実アカウントでの認証は未検証です。v0.0.3のプラグインZIPは旧方式のままです。
+
+配布者は下記のOAuthアプリ設定を済ませて `npm ci && npm run pack:plugins` を実行します。`dist/releases/` に3つのZIPと `SHA256SUMS` を出力します。Client Secretや利用者のトークンはZIPに含めません。`npm run test:packages` はテスト専用IDで一時ZIPを作り、利用者の環境変数なしで読み込めることを検証します。
+
+設定済みZIPのCLIからの追加・接続は次のとおりです。`plugin add` が起動する本体の接続画面で認証します。インストール済みのプラグインには `plugin login` を使えます。
 
 ```bash
-gh release download v0.0.3 --repo dooc-dev/dooc-plugins --pattern '*.zip' --pattern SHA256SUMS
+gh release download v0.0.4 --repo dooc-dev/dooc-plugins --pattern '*.zip' --pattern SHA256SUMS
 sha256sum --check SHA256SUMS
-# Set DOOC_LINEAR_CLIENT_ID before starting the host.
-npx @dooc-dev/dooc@0.0.2 plugin add ./dooc-linear-0.0.3.zip /path/to/documents 5179
+npx @dooc-dev/dooc@0.0.4 plugin add ./dooc-linear-0.0.4.zip /path/to/documents/dooc.yaml 5179
+npx @dooc-dev/dooc@0.0.4 plugin login linear /path/to/documents/dooc.yaml 5179
 ```
-
-GitHubは `DOOC_GITHUB_CLIENT_ID` / `DOOC_GITHUB_CLIENT_SECRET`、Slackは `DOOC_SLACK_CLIENT_ID` を設定して対応するZIPを追加します。OAuth設定は起動時に読み込むため、変更後は本体を再起動してください。ZIPには認証情報を含めません。
-
-このリポジトリで再生成する場合は `npm ci && npm run pack:plugins` を実行します。`dist/releases/` に3つのZIPと `SHA256SUMS` を出力します。`npm run test:packages` はpack後、ZIPを一時フォルダへ展開して依存関係なしでの読み込み・表示・操作の取得を検証します。
 
 ## localhost で試す
 
@@ -44,22 +46,17 @@ Linearは本文とプロパティ欄、GitHubは状態・ブランチ・レビ�
 
 ## 起動
 
-Node.js 22以上が必要です。本体とSDKは公開npmレジストリの `@dooc-dev/dooc` と `@dooc-dev/dooc-plugin` から取得します。
+Node.js 22以上とdooc 0.0.4を用意します。配布者のClient ID設定を含むモジュールは次のように読み込めます。
 
 ```bash
 npm ci
 npm run build
-cp .env.example .env
-# Fill in the client IDs and the GitHub client secret before continuing.
-set -a
-source .env
-set +a
-npx --no-install dooc view /path/to/documents 5179 --viewer-plugins ./dist/src/viewer.js
+npx --no-install dooc view /path/to/repository/dooc.yaml 5179 --viewer-plugins ./dist/src/viewer.js
 ```
 
-上のコマンドはこのリポジトリを作業ディレクトリにして実行します。`http://localhost:5179` を開き、埋め込みの接続ボタンでサービスごとに OAuth 認証します。設定したサービスだけが登録されます。GitHub は Client ID / Secret の両方、Linear と Slack は Client ID が必要です。Linear の Secret は任意、Slack の Secret は PKCE フローでは送信しません。
+`http://localhost:5179` を開き、埋め込みの接続ボタンでサービスごとに承認します。`src/oauth-clients.json` に登録されたサービスだけが有効です。利用者の環境変数からClient IDやSecretを読み込む処理はありません。
 
-`examples/dooc.yaml` と `examples/services.md` にドキュメント例があります。URL を自分のリソースに置き換えれば、`npx --no-install dooc view ./examples 5179 --viewer-plugins ./dist/src/viewer.js` で試せます。
+`examples/dooc.yaml` と `examples/services.md` にドキュメント例があります。URLを自分のリソースに置き換えて使用できます。
 
 文書には通常のリンクではなく、埋め込み形式で URL を書きます。
 
@@ -108,18 +105,30 @@ GitHubのマージはリポジトリが許可した方式だけを提示し、PR
 
 OAuth のユーザートークンはサーバー内だけで扱います。SSO を使う組織もサービス側のログイン・組織承認を経由します。汎用 IdP の SSO トークンを直接 API に送る機能ではありません。以前の読み取り scope で接続していた場合は、新しい scope を設定して再接続してください。
 
-## OAuth アプリの設定
+## OAuth アプリの設定（配布者のみ）
 
-| サービス | 環境変数 | Redirect URL |
+各サービスでdooc用のOAuthアプリを一度登録し、公開Client IDだけを `src/oauth-clients.json` に保存します。値は登録画面の実際のIDに置き換えます。
+
+```json
+{
+  "LINEAR": "registered-linear-client-id",
+  "GITHUB": "registered-github-client-id",
+  "SLACK": "registered-slack-client-id"
+}
+```
+
+Secretのキーや未知のキーはパッケージ作成時に拒否します。別の公開IDファイルを使う場合は `npm run pack:plugins -- --clients /path/to/oauth-clients.json` を指定できます。
+
+| サービス | 認証方式 | Redirect URL |
 | --- | --- | --- |
-| Linear | `DOOC_LINEAR_CLIENT_ID`、任意で `DOOC_LINEAR_CLIENT_SECRET` | `http://localhost:5179/api/plugins/callback/linear` |
-| GitHub | `DOOC_GITHUB_CLIENT_ID` / `DOOC_GITHUB_CLIENT_SECRET` | `http://localhost:5179/api/plugins/callback/github` |
-| Slack | `DOOC_SLACK_CLIENT_ID` | `http://localhost:5179/api/plugins/callback/slack` |
+| Linear | PKCE、ユーザー承認 | `http://localhost:5179/api/plugins/callback/linear` |
+| GitHub | Device Flowを有効化 | Device Flowでは使用しません |
+| Slack | PKCE、User Token Scopes | `http://localhost:5179/api/plugins/callback/slack` |
 
-ポートを変えた場合は Redirect URL も同じポートにします。`127.0.0.1` との混在を避け、ブラウザと登録 URL を `localhost` に揃えてください。
+LinearとSlackのポートを変えた場合はRedirect URLも合わせます。ブラウザと登録URLを `localhost` に揃えてください。GitHubの登録画面にCallback URL欄が必須の場合は `http://localhost:5179/api/plugins/callback/github` を登録できますが、このフローでは使いません。
 
-- **Linear:** OAuth アプリを作成します。`actor=user` と `read,write` scope を使い、認証した workspace と URL の workspace が一致することを確認します。[Linear OAuth 仕様](https://linear.app/developers/oauth-2-0-authentication)
-- **GitHub:** OAuth App を作成します。scope は `repo`, `read:user`, `read:discussion`, `project` です。Project編集のため、以前の `read:project` 接続は再認証が必要です。`repo` scope で非公開リポジトリの取得と、その URL に対するコメント・レビュー・更新を実行します。[GitHub scope 仕様](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)
+- **Linear:** PKCEを利用するOAuthアプリを作成します。他のworkspaceへ配布する場合は `distribution=public` にし、Client Credentialsは有効にする必要がありません。`actor=user` と `read,write` scope を使い、認証した workspace と URL の workspace が一致することを確認します。5179から起動する場合、本体の空きポート探索に対応するには5179〜5189の各コールバックURLを個別登録します。ポートの `*` 記法への対応は未確認です。[Linear OAuth 仕様](https://linear.app/developers/oauth-2-0-authentication)、[公開範囲・Redirect URLの仕様](https://linear.app/developers/oauth-app-manifests)
+- **GitHub:** OAuth Appを作成し、**Enable Device Flow** を有効にします。Client Secretは配布しません。[GitHub Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow)を使います。scope は `repo`, `read:user`, `read:discussion`, `project` です。Project編集のため、以前の `read:project` 接続は再認証が必要です。`repo` scope で非公開リポジトリの取得と、その URL に対するコメント・レビュー・更新を実行します。[GitHub scope 仕様](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)
 - **Slack:** dooc 用のアプリを作成し、OAuth & Permissions で **PKCE** を有効にしてください。有効化は Slack support を介さないと元に戻せない設定です。以下を **User Token Scopes** に登録します。bot scope は使いません。dooc が送信する PKCE パラメーターを使い、`client_secret` を送らずにコード交換・更新を行います。[Slack PKCE 仕様](https://docs.slack.dev/authentication/using-pkce/)
 
 ```text
@@ -183,25 +192,25 @@ Linear は [公式 GraphQL schema](https://github.com/linear/linear/blob/master/
 - 大きい本文・100 件を超える表示リストは上限を設け、取得制限は詳細ボタンとツールチップに表示します。出力は SDK の 2 MiB 制限内に収めます。
 - SDK の request は JSON のみなので、private file のバイナリダウンロード、full canvas HTML、Actions のログ・artifact ZIP、画像の直接表示は行いません。元サービスで確認してください。
 - HTTPS の既知のサービス URL のみ対応します。GitHub Enterprise Server、GovSlack、短縮 URL、未知の URL は対象外です。ソース文書に指定された任意の API へ認証情報を送る機能はありません。
-- データは閲覧者の権限で取得します。トークン、PKCE / state、認証付き通信、セッションはdoocのサーバー側で管理します。カードは検証済みブロックから本体が描画し、プラグイン独自のHTMLやJavaScriptをDOMに注入しません。リンクを検証し、`noopener noreferrer` を付けます。編集時には権限と最新バージョンを再確認し、リクエストIDで重複実行を防ぎます。サーバーを再起動したら再接続が必要です。
+- データは閲覧者の権限で取得します。トークン、PKCE / state、認証付き通信、セッションはdoocのサーバー側で管理します。カードは検証済みブロックから本体が描画し、プラグイン独自のHTMLやJavaScriptをDOMに注入しません。リンクを検証し、`noopener noreferrer` を付けます。編集時には権限と最新バージョンを再確認し、リクエストIDで重複実行を防ぎます。認証情報の保存・更新はdooc本体が管理します。
 
 ## 個別登録と確認
 
-環境変数版の代わりに、ホスト側モジュールから必要な factory だけを登録できます。
+配布者のホスト側モジュールから、必要なfactoryと登録済みの公開Client IDを指定することもできます。
 
 ```typescript
 import { createLinearPlugin, createGitHubPlugin, createSlackPlugin } from "@sasaki-s-sci/dooc-plugins";
 
 export default {
   plugins: [
-    createLinearPlugin({ clientId: process.env.DOOC_LINEAR_CLIENT_ID }),
-    createGitHubPlugin({ clientId: process.env.DOOC_GITHUB_CLIENT_ID, clientSecret: process.env.DOOC_GITHUB_CLIENT_SECRET }),
-    createSlackPlugin({ clientId: process.env.DOOC_SLACK_CLIENT_ID }),
+    createLinearPlugin({ clientId: "registered-linear-client-id" }),
+    createGitHubPlugin({ clientId: "registered-github-client-id" }),
+    createSlackPlugin({ clientId: "registered-slack-client-id" }),
   ],
 };
 ```
 
-このパッケージをインストールした環境では `--viewer-plugins @sasaki-s-sci/dooc-plugins/viewer` で環境変数版を使えます。`npm pack` で配布用の tarball を作れます。このリポジトリから自動 publish はしません。
+このパッケージをインストールした環境では `--viewer-plugins @sasaki-s-sci/dooc-plugins/viewer` で登録済みIDを含むモジュールを使えます。`npm pack` で配布用の tarball を作れます。このリポジトリから自動 publish はしません。
 
 ```bash
 npm run check
@@ -211,7 +220,7 @@ node dist/test/hotreload.js
 node dist/test/host.js
 ```
 
-通常のテストは API fixture を使い、認証情報やネットワークを必要としません。描画前に公開版doocのview検証を通し、ブロックの形式・サイズ・リンクを検証します。結合確認もインストール済みのdoocを使い、OAuth・refresh・認証付き request まで通します。隣接するdoocのソースは不要です。実アカウントでの OAuth 承認・API 通信は別途必要です。
+通常のテストは API fixture を使い、認証情報やネットワークを必要としません。描画前に公開版doocのview検証を通し、ブロックの形式・サイズ・リンクを検証します。`npm run check` の結合確認ではインストール済みのdooc 0.0.4を使い、GitHubのDevice Flow（承認待ち・ポーリング・接続完了）とLinear・SlackのPKCE・refreshをClient Secretなしで通します。隣接するdoocのソースは不要です。実アカウントでの OAuth 承認・API 通信は別途必要です。
 
 ## UIの設計
 

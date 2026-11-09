@@ -4,13 +4,20 @@ import { createHash } from "node:crypto";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isBuiltin } from "node:module";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import { validateClientIds } from "../dist/src/config.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const output = join(root, "dist/releases");
+const { values } = parseArgs({ options: { clients: { type: "string" }, output: { type: "string" } } });
+const clients = validateClientIds(JSON.parse(readFileSync(resolve(values.clients ?? join(root, "src/oauth-clients.json")), "utf8")));
+for (const service of ["LINEAR", "GITHUB", "SLACK"]) {
+  if (!clients[service]) throw new Error(`Register the ${service} OAuth application and add its public client ID before packaging`);
+}
+const output = resolve(values.output ?? join(root, "dist/releases"));
 const cli = fileURLToPath(new URL("./cli.js", import.meta.resolve("@dooc-dev/dooc")));
 const staging = mkdtempSync(join(tmpdir(), "dooc-plugin-pack-"));
 const checksums = [];
@@ -21,6 +28,9 @@ try {
     const bundle = await build({
       entryPoints: [join(root, `src/extensions/${service}.ts`)],
       outfile: join(folder, main), bundle: true, platform: "node", format: "esm", target: "node22", metafile: true,
+      plugins: [{ name: "public-oauth-clients", setup(builder) {
+        builder.onLoad({ filter: /[/\\]oauth-clients\.json$/ }, () => ({ contents: JSON.stringify(clients), loader: "json" }));
+      } }],
       // YAML uses CommonJS imports of Node built-ins inside the ESM bundle.
       banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
     });

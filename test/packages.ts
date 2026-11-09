@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import type { DataPlugin } from "@dooc-dev/dooc-plugin";
 import { users } from "./fixtures.js";
@@ -14,19 +15,29 @@ const host = (path: string) => import(new URL(path, import.meta.resolve("@dooc-d
 const { readExtensionZip } = await host("core/extension-package.js");
 const { validateViewerPlugins } = await host("viewer/plugin-config.js");
 const { version } = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
-const sums = readFileSync(new URL("../releases/SHA256SUMS", import.meta.url), "utf8");
+const pack = fileURLToPath(new URL("../../scripts/pack.mjs", import.meta.url));
 const keys = ["LINEAR", "GITHUB", "SLACK"].flatMap(service => [`DOOC_${service}_CLIENT_ID`, `DOOC_${service}_CLIENT_SECRET`]);
 const saved = keys.map(key => process.env[key]);
 const folder = mkdtempSync(join(tmpdir(), "dooc-plugin-consumer-"));
 try {
-  for (const key of keys) process.env[key] = "package-test-credential";
+  const clients = join(folder, "oauth-clients.json"), output = join(folder, "releases");
+  writeFileSync(clients, "{}");
+  const missing = spawnSync(process.execPath, [pack, "--clients", clients, "--output", output], { encoding: "utf8" });
+  assert.notEqual(missing.status, 0); assert.match(missing.stderr, /Register the LINEAR OAuth application/);
+  writeFileSync(clients, JSON.stringify({ LINEAR: "package-linear-app", GITHUB: "package-github-app", SLACK: "package-slack-app", CLIENT_SECRET: "must-not-be-bundled" }));
+  const secret = spawnSync(process.execPath, [pack, "--clients", clients, "--output", output], { encoding: "utf8" });
+  assert.notEqual(secret.status, 0); assert.match(secret.stderr, /never secrets/);
+  writeFileSync(clients, JSON.stringify({ LINEAR: "package-linear-app", GITHUB: "package-github-app", SLACK: "package-slack-app" }));
+  execFileSync(process.execPath, [pack, "--clients", clients, "--output", output], { stdio: "inherit" });
+  const sums = readFileSync(join(output, "SHA256SUMS"), "utf8");
+  for (const key of keys) delete process.env[key];
   for (const [service, name, fixture, url] of [
     ["linear", "Linear", linearFixture, "https://linear.app/acme/issue/DOC-42"],
     ["github", "GitHub", githubFixture, "https://github.com/acme/docs/pull/42"],
     ["slack", "Slack", slackFixture, "https://acme.slack.com/archives/C123/p1794128400000000"],
   ] as const) {
     const filename = `dooc-${service}-${version}.zip`;
-    const bytes = readFileSync(new URL(`../releases/${filename}`, import.meta.url));
+    const bytes = readFileSync(join(output, filename));
     assert(sums.includes(`${createHash("sha256").update(bytes).digest("hex")}  ${filename}\n`));
     const pkg = await readExtensionZip(bytes, async (data: Uint8Array, size: number) => inflateRawSync(data, { maxOutputLength: Math.max(1, size) }));
     assert.equal(pkg.name, `dooc-${service}`); assert.equal(pkg.version, version); assert(pkg.icon?.light);
@@ -41,22 +52,23 @@ try {
     assert.deepEqual(config.plugins.map((plugin: DataPlugin) => plugin.id), [service]);
     const plugin: DataPlugin = config.plugins[0];
     assert.equal(plugin.name, name); assert(plugin.icon?.light);
-    assert.equal(plugin.oauth.clientId, "package-test-credential");
-    if (service === "slack") assert.equal(plugin.oauth.clientSecret, undefined);
+    assert.equal(plugin.oauth.clientId, `package-${service}-app`);
+    assert.equal(plugin.oauth.clientSecret, undefined);
+    if (service === "github") {
+      assert("deviceAuthorizationUrl" in plugin.oauth);
+      assert.equal(plugin.oauth.deviceAuthorizationUrl, "https://github.com/login/device/code");
+    }
     const context = { ...fixture(), user: users[service] };
     const result = await plugin.read(new URL(url), context);
     assert(!("format" in result)); assert(result.collapsed && !("format" in result.collapsed));
     assert.match(render(result), /plugin-block-heading/);
     assert(plugin.actions); assert((await plugin.actions(new URL(url), context)).length > 0);
     const key = `DOOC_${service.toUpperCase()}_CLIENT_ID`;
+    process.env[key] = "user-setting-must-not-override-publisher";
+    const again = (await import(`${entry}?user-env`)).default.plugins[0];
+    assert.equal(again.oauth.clientId, `package-${service}-app`);
+    assert.equal(again.oauth.clientSecret, undefined);
     delete process.env[key];
-    await assert.rejects(import(`${entry}?missing-client`), new RegExp(`Set ${key}`));
-    process.env[key] = "package-test-credential";
-    if (service === "github") {
-      delete process.env.DOOC_GITHUB_CLIENT_SECRET;
-      await assert.rejects(import(`${entry}?missing-secret`), /Set both/);
-      process.env.DOOC_GITHUB_CLIENT_SECRET = "package-test-credential";
-    }
     console.log(`${filename}: isolated import, configuration, assets, rendering and actions passed`);
   }
 } finally {

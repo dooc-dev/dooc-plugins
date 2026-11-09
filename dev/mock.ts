@@ -11,6 +11,7 @@ export function createMockPlugin(original: ActionPlugin, fixture: () => Omit<Act
   const nonce = () => randomBytes(32).toString("base64url");
   const error = (message: string, status = 400) => Response.json({ error: message }, { status });
   const oauth = { ...original.oauth, clientId: `dooc-dev-${original.id}`, clientSecret: undefined,
+    deviceAuthorizationUrl: undefined,
     authorizationUrl: `${origin}/authorize`, tokenUrl: `${origin}/token` };
   const contextFor = <T extends PluginContext>(context: T): T => ({
     ...context,
