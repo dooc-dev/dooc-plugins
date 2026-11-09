@@ -1,8 +1,25 @@
 # Linear / GitHub / Slack viewer plugins
 
-URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。dooc 0.0.22以上と `@sasaki-s-sci/dooc-plugin` 0.0.3を使用します。
+URLから取得した情報を、doocのブロックUIで表示するLinear・GitHub・Slackのプラグイン集です。表示はJSONで定義し、本体がテーマに合わせてDOMへ描画します。`@dooc-dev/dooc` 0.0.2と `@dooc-dev/dooc-plugin` 0.0.2を使用します。本体0.0.1には対応しません。
 
-3サービスの `read` はSDKの `PluginBlockContent` に従う `format: "blocks"` を返します。`src/cards.ts` で見出し・プロパティ・表・メッセージを組み立て、`header` にサービス情報、`collapsed` に折りたたみ表示を指定します。編集箇所の `edit.action` と操作ブロックの `ids` は、各プラグインの `actions` / `act` APIに結びつけます。
+3サービスの `read` はSDKの `PluginBlockContent` に従う `{ header, blocks, collapsed }` を返します。SDK 0.0.2で廃止された `format` は通常表示・折りたたみ表示の両方から削除しています。`src/cards.ts` で見出し・プロパティ・表・メッセージを組み立て、`header` にサービス情報、`collapsed` に折りたたみ表示を指定します。編集箇所の `edit.action` と操作ブロックの `ids` は、各プラグインの `actions` / `act` APIに結びつけます。プラグイン管理画面にはサービス名と公式アイコンを表示します。
+
+## サービス別ZIPをインストール
+
+[GitHub Release v0.0.3](https://github.com/dooc-dev/dooc-plugins/releases/tag/v0.0.3) から `dooc-linear-0.0.3.zip`、`dooc-github-0.0.3.zip`、`dooc-slack-0.0.3.zip` を取得できます。各ZIPには1サービスの実装・依存ライブラリ・公式SVGを同梱しています。
+
+Node.js 22以上とdooc 0.0.2を用意し、下記のOAuth設定を環境変数に設定してからdoocを起動します。ZIPはdoocのプラグイン管理画面にドロップするか、CLIで追加します。
+
+```bash
+gh release download v0.0.3 --repo dooc-dev/dooc-plugins --pattern '*.zip' --pattern SHA256SUMS
+sha256sum --check SHA256SUMS
+# Set DOOC_LINEAR_CLIENT_ID before starting the host.
+npx @dooc-dev/dooc@0.0.2 plugin add ./dooc-linear-0.0.3.zip /path/to/documents 5179
+```
+
+GitHubは `DOOC_GITHUB_CLIENT_ID` / `DOOC_GITHUB_CLIENT_SECRET`、Slackは `DOOC_SLACK_CLIENT_ID` を設定して対応するZIPを追加します。OAuth設定は起動時に読み込むため、変更後は本体を再起動してください。ZIPには認証情報を含めません。
+
+このリポジトリで再生成する場合は `npm ci && npm run pack:plugins` を実行します。`dist/releases/` に3つのZIPと `SHA256SUMS` を出力します。`npm run test:packages` はpack後、ZIPを一時フォルダへ展開して依存関係なしでの読み込み・表示・操作の取得を検証します。
 
 ## localhost で試す
 
@@ -23,11 +40,11 @@ Linearは本文とプロパティ欄、GitHubは状態・ブランチ・レビ�
 
 ロゴは [Linear](https://linear.app/brand)、[GitHub](https://brand.github.com/foundations/logo)、[Slack](https://slack.com/media-kit) の公式配布 SVG を使用しています。原本・配布元・SHA-256 は `assets/brands/` に保存し、パッケージに同梱します。ライト・ダーク用に公式のバリエーションを切り替え、表示時に外部画像を取得しません。
 
-GitHub Packagesの読み取り権限でnpmを認証してから `npm ci` を実行してください。`npm run dev` / `mise run dev` は `src/` と `dev/` のTypeScriptを監視し、コンパイル成功後にプレビューを再起動します。本体の配布ファイルへのパッチは不要です。型エラーの間は直前のプレビューを維持します。開発サーバー再起動時にはダミーデータと接続が初期化され、未保存入力も失われます。終了は `Ctrl+C`。
+`npm ci` にGitHub Packagesの認証は不要です。`npm run dev` / `mise run dev` は `src/` と `dev/` のTypeScriptを監視し、コンパイル成功後にプレビューを再起動します。本体の配布ファイルへのパッチは不要です。型エラーの間は直前のプレビューを維持します。開発サーバー再起動時にはダミーデータと接続が初期化され、未保存入力も失われます。終了は `Ctrl+C`。
 
 ## 起動
 
-Node.js 22以上とdooc 0.0.22以上が必要です。本体とSDKはGitHub Packagesから取得します。読み取り権限を持つアカウントでnpmを認証してください。registryの指定は `.npmrc` にあり、認証情報はユーザーのnpm設定で管理します。
+Node.js 22以上が必要です。本体とSDKは公開npmレジストリの `@dooc-dev/dooc` と `@dooc-dev/dooc-plugin` から取得します。
 
 ```bash
 npm ci
@@ -52,15 +69,15 @@ npx --no-install dooc view /path/to/documents 5179 --viewer-plugins ./dist/src/v
 ![Slack thread](https://my-workspace.slack.com/archives/C0123456789/p1700000000123456)
 ```
 
-plugin は文書の外から `--viewer-plugins` で登録します。OAuth 情報や実行モジュールを `dooc.yaml` に書く必要はありません。プレビュー内の詳細はクリック・キーボードで開閉できます。外部 URL を開く、コピーする、全体を折りたたむ操作は dooc 標準の埋め込みコントロールを使います。
+plugin はZIPのインストール、または文書の外から `--viewer-plugins` で登録します。OAuth 情報や実行モジュールを `dooc.yaml` に書く必要はありません。プレビュー内の詳細はクリック・キーボードで開閉できます。外部 URL を開く、コピーする、全体を折りたたむ操作は dooc 標準の埋め込みコントロールを使います。
 
 ## URL に対する CRUD
 
-タイトル・本文・プロパティはクリック、またはTabで移動してEnter / F2で編集します。選択項目も「保存」で確定し、直接編集では表示中のカードと他の入力を維持します。自分のコメント・Slack投稿、GitHubのファイル内容・Project項目値も編集できます。上枠の再読み込みボタンと操作メニューから、権限のある追加操作へアクセスできます。
+カード上枠の編集ボタンで編集モードを有効にします。タイトル・本文・プロパティはダブルクリック、またはTabで移動してEnter / F2で編集します。直接編集は入力停止・選択変更・フォーカス移動時に自動保存されます。自分のコメント・Slack投稿、GitHubのファイル内容・Project項目値も編集できます。投稿などの追加操作はカード内の対応するボタンから実行します。
 
-入力欄にはブラウザ標準のラベル付きフォームを使用します。Escapeまたはキャンセルで変更を破棄し、Ctrl / Cmd + Enterで保存できます。日本語変換中のEnterは送信しません。保存失敗時は入力を保持し、投稿・リアクションによる再描画でも開いている下書きを復元します。削除やマージなどは対象を表示して確認します。更新競合は上書きせずエラーとし、通信結果が不明な場合は自動再送しません。
+入力欄にはブラウザ標準のラベル付きフォームを使用します。Ctrl / Cmd + Enterでも保存できます。日本語変換中のEnterは送信しません。コメント投稿などは送信ボタンで確定し、直接編集の自動保存中も未送信の下書きを維持します。保存失敗時は入力を保持し、再編集して保存を試せます。削除やマージなどは対象を表示して確認します。編集モードを終了すると直接編集の変更を保存して閉じます。Escapeによる変更破棄はありません。
 
-以下の操作を提供します。対応する権限がある場合のみ、カード内または上枠の操作メニューに表示されます。
+以下の操作を提供します。対応する権限がある場合のみカード内に表示され、編集モードで操作できます。
 
 | URL の対象 | 操作APIの対応範囲 |
 | --- | --- |
@@ -187,7 +204,7 @@ export default {
 このパッケージをインストールした環境では `--viewer-plugins @sasaki-s-sci/dooc-plugins/viewer` で環境変数版を使えます。`npm pack` で配布用の tarball を作れます。このリポジトリから自動 publish はしません。
 
 ```bash
-npm test
+npm run check
 # With npm run dev running: verify reloads and recovery from a temporary type error.
 node dist/test/hotreload.js
 # Integration check against the installed dooc release.

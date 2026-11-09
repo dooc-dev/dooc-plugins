@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { createHash } from "node:crypto";
 import config from "../dev/viewer.js";
 
-const { createPluginRuntime } = await import(new URL("./plugins/runtime.js", import.meta.resolve("@sasaki-s-sci/dooc")).href);
+const { createPluginRuntime } = await import(new URL("./plugins/runtime.js", import.meta.resolve("@dooc-dev/dooc")).href);
 const documents = ["overview", "linear", "github", "slack"].map(name =>
   readFileSync(new URL(`../../dev/content/${name}.md`, import.meta.url), "utf8"));
 const urls = [...new Set(documents.flatMap(text => [...text.matchAll(/!\[[^\]]*\]\((https:\/\/[^)]+)\)/g)].map(match => match[1])))];
@@ -29,7 +29,7 @@ for (const plugin of config.plugins) {
       const { user, view } = await runtime.read(session, plugin.id, source);
       assert(Array.isArray((await runtime.actions(session, plugin.id, source)).actions));
       assert.equal(user.name, "Ada Mori");
-      assert.equal(view.format, "blocks"); assert.equal(view.collapsed.format, "blocks");
+      assert(!("format" in view)); assert(!("format" in view.collapsed));
       assert(!JSON.stringify(view).includes("Unavailable"), source);
       assert(!JSON.stringify(view).includes("demo-refresh-"));
     }

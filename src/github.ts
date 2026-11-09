@@ -1,5 +1,6 @@
 import { withActions, bodyField, titleField, version, type ActionContext, type ActionField, type ActionPlugin, type BoundAction } from "./actions.js";
-import { PluginError, type PluginContext } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError, type PluginContext } from "@dooc-dev/dooc-plugin";
+import { brandIcons } from "./brand-icons.js";
 import { parseDocument } from "yaml";
 import { array, connection, graphql, label, MAX_PAGES, MORE, object, optionalSections, PAGE_SIZE, partialPage, pathParts, segment, string, view, type OAuthOptions, type Row, type Section } from "./common.js";
 
@@ -306,7 +307,7 @@ async function githubActions(url: URL, context: ActionContext): Promise<BoundAct
 
 export function createGitHubPlugin(options: OAuthOptions): ActionPlugin {
   return withActions({
-    id: "github", matches: url => Boolean(parse(url)), apiOrigins: [API],
+    id: "github", name: "GitHub", icon: brandIcons.GitHub, matches: url => Boolean(parse(url)), apiOrigins: [API],
     oauth: {
       authorizationUrl: "https://github.com/login/oauth/authorize", tokenUrl: "https://github.com/login/oauth/access_token",
       ...options, scopes: ["repo", "read:user", "read:discussion", "project"],

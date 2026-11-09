@@ -1,6 +1,6 @@
 import type { ActionContext } from "../src/actions.js";
 import { object, string, type Row } from "../src/common.js";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
 // Fictional, deterministic data. No fixture falls back to a live service.
 const page = <T>(nodes: T[] = []) => ({ nodes, pageInfo: { hasNextPage: false, endCursor: null } });
 const ada = { id: "user-id", name: "Ada Mori", displayName: "Ada", login: "ada-mori" };

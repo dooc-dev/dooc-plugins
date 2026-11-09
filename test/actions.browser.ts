@@ -6,6 +6,7 @@ export default async (page: BrowserPage, origin = "http://localhost:5183") => {
   const results: string[] = [];
   for (const service of ["linear", "github", "slack"]) {
     const card = page.locator(`[data-plugin="${service}"]`), create = service === "slack" ? "reply.create" : "comment.create";
+    await card.locator('[data-plugin-action="edit"]').click();
     const composer = card.locator(`[data-block-composer][data-block-action="${create}"]`);
     await composer.locator('button').click();
     const marker = `Block comment ${service} ${Date.now()}`;
@@ -13,9 +14,10 @@ export default async (page: BrowserPage, origin = "http://localhost:5183") => {
     let message = card.locator('.plugin-block-message').filter({ hasText: marker });
     await message.waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector('.plugin[aria-busy="true"]'));
-    await message.locator('.plugin-edit-display').click(); await message.locator('textarea').fill(`${marker} edited`);
-    await message.locator('button[type="submit"]').click();
-    await message.locator('.plugin-edit-display').filter({ hasText: `${marker} edited` }).waitFor({ state: 'visible' });
+    await message.locator('[data-plugin-edit-trigger]').dblclick(); await message.locator('textarea').fill(`${marker} edited`);
+    await message.locator('textarea').press('Control+Enter');
+    await card.locator('.plugin-block-heading').click();
+    await message.locator('[data-plugin-edit-trigger]').filter({ hasText: `${marker} edited` }).waitFor({ state: 'visible' });
     await page.waitForFunction(() => !document.querySelector('.plugin[aria-busy="true"]'));
     await message.locator('.plugin-message-actions button').click();
     const dialog = page.locator('dialog[open]');

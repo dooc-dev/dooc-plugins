@@ -1,7 +1,7 @@
 import { render } from "./render.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
 import { createLinearPlugin, createGitHubPlugin } from "../src/index.js";
 import { linearFixture, githubFixture } from "../dev/fixtures.js";
 import { object } from "../src/common.js";

@@ -1,4 +1,4 @@
-import type { PluginContext } from "@sasaki-s-sci/dooc-plugin";
+import type { PluginContext } from "@dooc-dev/dooc-plugin";
 import { object, string, type Row } from "../src/common.js";
 import assert from "node:assert/strict";
 

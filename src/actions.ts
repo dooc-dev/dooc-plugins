@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { PluginError, type DataPlugin, type PluginContext, type PluginUser } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError, type DataPlugin, type PluginContext, type PluginUser } from "@dooc-dev/dooc-plugin";
 import type { CardView } from "./cards.js";
 
-import type { PluginActionContext, PluginActionField, PluginAction, PluginActionRequest, PluginActionResult } from "@sasaki-s-sci/dooc-plugin";
+import type { PluginActionContext, PluginActionField, PluginAction, PluginActionRequest, PluginActionResult } from "@dooc-dev/dooc-plugin";
 export type ActionContext = PluginActionContext;
 export type ActionField = PluginActionField;
 export type UrlAction = PluginAction;

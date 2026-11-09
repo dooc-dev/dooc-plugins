@@ -1,5 +1,6 @@
 import { withActions, bodyField, version, type ActionContext, type ActionPlugin, type BoundAction } from "./actions.js";
-import { parseOAuthToken, PluginError, type PluginContext, type OAuthToken } from "@sasaki-s-sci/dooc-plugin";
+import { parseOAuthToken, PluginError, type PluginContext, type OAuthToken } from "@dooc-dev/dooc-plugin";
+import { brandIcons } from "./brand-icons.js";
 import { array, label, MAX_PAGES, MORE, object, optionalSections, partialPage, pathParts, string, view, type OAuthOptions, type Row, type Section } from "./common.js";
 
 const API = "https://slack.com/api/";
@@ -170,7 +171,7 @@ async function slackActions(url: URL, context: ActionContext): Promise<BoundActi
 
 export function createSlackPlugin({ clientId }: Pick<OAuthOptions, "clientId">): ActionPlugin {
   return withActions({
-    id: "slack", matches: url => Boolean(parse(url)), apiOrigins: ["https://slack.com"],
+    id: "slack", name: "Slack", icon: brandIcons.Slack, matches: url => Boolean(parse(url)), apiOrigins: ["https://slack.com"],
     oauth: {
       authorizationUrl: "https://slack.com/oauth/v2/authorize", tokenUrl: `${API}oauth.v2.access`, clientId,
       scopeParameter: "user_scope", scopeSeparator: ",", parseToken,

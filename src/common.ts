@@ -1,4 +1,4 @@
-import { PluginError, type PluginContext } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError, type PluginContext } from "@dooc-dev/dooc-plugin";
 
 export interface OAuthOptions { clientId: string; clientSecret?: string }
 export type Row = Record<string, unknown>;

@@ -4,6 +4,7 @@ export interface BrowserLocator {
   contentFrame(): BrowserLocator;
   getByRole(role: string, options: { name: string; exact?: boolean }): BrowserLocator;
   click(): Promise<void>;
+  dblclick(): Promise<void>;
   press(key: string): Promise<void>;
   scrollIntoViewIfNeeded(): Promise<void>;
   fill(value: string): Promise<void>;

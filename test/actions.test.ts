@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { randomUUID } from "node:crypto";
 import { PassThrough } from "node:stream";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
 import { createLinearPlugin, createGitHubPlugin, createSlackPlugin } from "../src/index.js";
 import type { ActionContext, ActionRequest, ActionResult, UrlAction } from "../src/actions.js";
 import type { CardView } from "../src/cards.js";
@@ -14,8 +14,8 @@ import { linearFixture, githubFixture, slackFixture } from "../dev/fixtures.js";
 import { users, options } from "./fixtures.js";
 import { object, array } from "../src/common.js";
 
-const hostRoot = new URL("./", import.meta.resolve("@sasaki-s-sci/dooc"));
-type BaseRuntime = ReturnType<typeof import("../node_modules/@sasaki-s-sci/dooc/dist/plugins/runtime.js").createPluginRuntime>;
+const hostRoot = new URL("./", import.meta.resolve("@dooc-dev/dooc"));
+type BaseRuntime = ReturnType<typeof import("../node_modules/@dooc-dev/dooc/dist/plugins/runtime.js").createPluginRuntime>;
 type Runtime = BaseRuntime;
 const { createPluginRuntime } = await import(new URL("plugins/runtime.js", hostRoot).href) as {
   createPluginRuntime: (plugins: Parameters<typeof createMockPlugin>[0][], transport: (url: string, init: RequestInit) => Promise<Response>) => Runtime;

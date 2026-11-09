@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 import { createGitHubPlugin, createLinearPlugin, createSlackPlugin } from "../src/index.js";
 import { githubContext, linearContext, slackContext, options } from "./fixtures.js";
 
-const host = (path: string) => import(new URL(path, import.meta.resolve("@sasaki-s-sci/dooc")).href);
+const host = (path: string) => import(new URL(path, import.meta.resolve("@dooc-dev/dooc")).href);
 const { createPluginRuntime } = await host("plugins/runtime.js");
 const { validateViewerPlugins } = await host("viewer/plugin-config.js");
 const { pluginViewHtml } = await host("viewer/plugin-view.js");

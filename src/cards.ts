@@ -1,4 +1,4 @@
-import type { PluginBlock, PluginBlockContent, PluginCell, PluginEdit, PluginInline, PluginTone } from "@sasaki-s-sci/dooc-plugin";
+import type { PluginBlock, PluginBlockContent, PluginCell, PluginEdit, PluginInline, PluginTone } from "@dooc-dev/dooc-plugin";
 import type { Row, Section } from "./common.js";
 import { brandIcons } from "./brand-icons.js";
 
@@ -203,6 +203,6 @@ export function view(input: { service: string; title: string; body?: string; met
   if (timestamps.length) main.push({ type: "context", items: timestamps });
   if (truncated) main.push({ type: "text", text: "Preview shortened. Open the source URL for the full content." });
   const header = { title: input.service, context: text(input.context || name(resource.project), 200), reference: issueId || (number ? `#${number}` : undefined), icon: brandIcons[input.service] };
-  return { format: "blocks", header, blocks: linear && fields.length ? [{ type: "columns", main, aside: [{ type: "fields", items: fields }] }] : main,
-    collapsed: { format: "blocks", blocks: [{ type: "context", items: [{ text: title, strong: true }, badge] }] } };
+  return { header, blocks: linear && fields.length ? [{ type: "columns", main, aside: [{ type: "fields", items: fields }] }] : main,
+    collapsed: { blocks: [{ type: "context", items: [{ text: title, strong: true }, badge] }] } };
 }

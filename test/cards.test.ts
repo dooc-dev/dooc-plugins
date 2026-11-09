@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
-import type { PluginBlock } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
+import type { PluginBlock } from "@dooc-dev/dooc-plugin";
 import { createGitHubPlugin, createLinearPlugin, createSlackPlugin } from "../src/index.js";
 import { view } from "../src/common.js";
 import { githubFixture, linearFixture, slackFixture } from "../dev/fixtures.js";
@@ -56,7 +56,7 @@ test("Untrusted content stays data until the host renders it, including titles, 
     { title: "Changed files / diff", data: [{ filename: '<svg onload="alert(1)">', patch: '+<script>alert(1)</script>\n-<img onerror="x">' }] },
     { title: "Comments", data: [{ id: 'id" onclick="alert(1)', body: "Body", user: "Alice" }] },
   ] });
-  assert.equal(result.format, "blocks"); assert(!("html" in result));
+  assert(!("format" in result)); assert(!("html" in result));
   const html = render(result);
   assert.match(html, /<strong>Hello<\/strong>/); assert.match(html, /&lt;script&gt;/);
   assert(!/<(?:script|img)\b|<svg onload=/.test(html)); assert(!html.includes('href="javascript:')); assert(!html.includes(' onclick="'));

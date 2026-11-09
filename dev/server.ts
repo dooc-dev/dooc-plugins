@@ -7,7 +7,7 @@ import ts from "typescript";
 process.chdir(fileURLToPath(new URL("../../", import.meta.url)));
 let port = process.argv[2] ?? "5179";
 if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error("Invalid preview port");
-const cli = fileURLToPath(new URL("./cli.js", import.meta.resolve("@sasaki-s-sci/dooc")));
+const cli = fileURLToPath(new URL("./cli.js", import.meta.resolve("@dooc-dev/dooc")));
 let server: ChildProcess | undefined;
 let valid = false, pending = false, restarting = false, stopping = false;
 

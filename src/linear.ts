@@ -1,5 +1,6 @@
 import { withActions, bodyField, titleField, version, type ActionContext, type ActionField, type ActionPlugin, type BoundAction } from "./actions.js";
-import { PluginError, type PluginContext } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError, type PluginContext } from "@dooc-dev/dooc-plugin";
+import { brandIcons } from "./brand-icons.js";
 import { array, connection, graphql, label, MAX_PAGES, MORE, object, optionalSections, partialPage, pathParts, string, view, type OAuthOptions, type Row, type Section } from "./common.js";
 
 const API = "https://api.linear.app/graphql";
@@ -230,7 +231,7 @@ async function linearActions(url: URL, context: ActionContext): Promise<BoundAct
 
 export function createLinearPlugin(options: OAuthOptions): ActionPlugin {
   return withActions({
-    id: "linear", matches: url => Boolean(parse(url)), apiOrigins: ["https://api.linear.app"],
+    id: "linear", name: "Linear", icon: brandIcons.Linear, matches: url => Boolean(parse(url)), apiOrigins: ["https://api.linear.app"],
     oauth: {
       authorizationUrl: "https://linear.app/oauth/authorize", tokenUrl: "https://api.linear.app/oauth/token",
       ...options, scopes: ["read", "write"], scopeSeparator: ",", authorizationParams: { actor: "user" },

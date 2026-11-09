@@ -1,7 +1,7 @@
 import type { ActionContext, ActionPlugin } from "../src/actions.js";
-import type { PluginContext } from "@sasaki-s-sci/dooc-plugin";
+import type { PluginContext } from "@dooc-dev/dooc-plugin";
 import { createHash, randomBytes } from "node:crypto";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
 
 /** Route a real plugin through dooc's local mock transport, including OAuth and PKCE. */
 export function createMockPlugin(original: ActionPlugin, fixture: () => Omit<ActionContext, "user">) {

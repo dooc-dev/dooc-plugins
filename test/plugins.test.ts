@@ -1,7 +1,7 @@
 import { render } from "./render.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PluginError } from "@sasaki-s-sci/dooc-plugin";
+import { PluginError } from "@dooc-dev/dooc-plugin";
 import { createGitHubPlugin, createLinearPlugin, createSlackPlugin } from "../src/index.js";
 import { view } from "../src/common.js";
 import { githubContext, linearContext, slackContext, options, page, resource, users } from "./fixtures.js";
@@ -40,8 +40,8 @@ for (const [plugin, makeContext, urls] of cases) {
     const url = new URL(source), context = makeContext();
     assert.equal(plugin.matches(url), true);
     const result = await plugin.read(url, context);
-    assert.equal(result.format, "blocks");
-    assert.equal(result.collapsed.format, "blocks"); assert.match(render(result), /plugin-block-heading/);
+    assert(!("format" in result)); assert(Array.isArray(result.blocks));
+    assert(!("format" in result.collapsed)); assert.match(render(result), /plugin-block-heading/);
     assert(!render(result).includes(options.clientSecret));
     assert(context.calls.length > 0);
     assert(!render(result).includes("Unavailable"));
